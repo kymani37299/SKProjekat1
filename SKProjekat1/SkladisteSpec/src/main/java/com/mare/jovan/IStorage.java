@@ -2,13 +2,14 @@ package com.mare.jovan;
 
 import java.util.List;
 
+import com.mare.jovan.file.Directory;
 import com.mare.jovan.file.File;
 
 public interface IStorage {
-	void create(File file);
-	void upload(File source, File destination);
-	void upload(List<File> files, File destination);
-	void delete(File file);
+	boolean create(Directory directory);
+	boolean upload(String sourcePath , File destination);
+	boolean upload(List<String> sourcePathList, File destination);
+	boolean delete(File file);
 	List<File> list(ListParams params);
-	void download(File target, File destination);
+	boolean download(File target, String destinationPath);
 }
