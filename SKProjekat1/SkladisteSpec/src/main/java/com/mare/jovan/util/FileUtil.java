@@ -9,6 +9,11 @@ import java.io.Serializable;
 
 public class FileUtil {
 
+	public static boolean isPathValid(String path) {
+		// TODO
+		return true;
+	}
+	
 	public static boolean serialize(Serializable target, String path) {
 		try {    
             FileOutputStream file = new FileOutputStream(path); 

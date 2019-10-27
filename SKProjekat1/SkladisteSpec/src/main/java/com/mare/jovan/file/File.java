@@ -1,7 +1,7 @@
 package com.mare.jovan.file;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Arrays;
 
 public class File implements Serializable{
 	private static final long serialVersionUID = 1L;
@@ -36,6 +36,18 @@ public class File implements Serializable{
 
 	public FileType getFileType() {
 		return type;
+	}
+	
+	public String[] getParentPathList() {
+		String[] pathList = getPathList();
+		if(pathList.length==1) return new String[0];
+		return Arrays.copyOfRange(pathList,0,pathList.length-1);
+	}
+	
+	public String[] getPathList() {
+		String[] pathList = path.split("\'");
+		if(pathList[0].isBlank()) pathList = Arrays.copyOfRange(pathList,1,pathList.length);
+		return pathList;
 	}
 	
 	public String getPath() {

@@ -19,6 +19,11 @@
 		<artifactId>SkladisteSpec</artifactId>
 		<version>1.0.0</version>
 	</dependency>
+	<dependency>
+            <groupId>com.dropbox.core</groupId>
+            <artifactId>dropbox-core-sdk</artifactId>
+            <version>3.1.1</version>
+        </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
