@@ -7,12 +7,16 @@ public class File implements Serializable{
 	private static final long serialVersionUID = 1L;
 	
 	private String name;
+	private String path;
 	private boolean valid;
 	private FileMetadata metadata;
 	protected FileType type;
 	
-	public File(String name) {
-		this.name = name;
+	public File(String path) {
+		this.path = path.replace('/', '\'').replace('\\', '\'');
+		String tmp[] = this.path.split("\'");
+		this.name = tmp[tmp.length-1];
+		// TODO CHECK IF VALID
 		this.valid = true;
 		this.type = FileType.File;
 	}
@@ -32,6 +36,10 @@ public class File implements Serializable{
 
 	public FileType getFileType() {
 		return type;
+	}
+	
+	public String getPath() {
+		return path;
 	}
 	
 	public String getName() {
