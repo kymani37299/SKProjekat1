@@ -54,7 +54,7 @@ public class File implements Serializable{
 	public boolean equals(Object obj) {
 		if(obj instanceof File) {
 			File f = (File)obj;
-			return f.name.equals(this.name);
+			return f.path.equals(this.path);
 		}
 		return super.equals(obj);
 	}
