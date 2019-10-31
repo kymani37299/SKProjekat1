@@ -9,51 +9,45 @@ import com.mare.jovan.file.FileType;
 import com.mare.jovan.user.User;
 import com.mare.jovan.util.FileUtil;
 
-public class DropboxStorage implements IStorage{
+public class LocalStorage implements IStorage {
 
 	private static final String ROOT_DIR_PATH = "files.bin";
-	
-	private DropboxTransferProvider provider;
 	
 	private User currentUser;
 	private Directory rootDir;
 	
-	protected DropboxStorage(User currentUser) {
-		provider = DropboxTransferProvider.getInstance();
-		this.currentUser = currentUser;
-		rootDir = getRootDir();
+	private boolean rootInitialized;
+		
+	protected LocalStorage(User currentUser) {
+		this.rootInitialized = false;
+		this.currentUser = currentUser;		
+		this.rootDir = getDirectory();
+		
 	}
 	
-	private boolean updateRootDir() {
+	private void updateFiles() {
 		FileUtil.serialize(rootDir, ROOT_DIR_PATH);
-		return provider.update(ROOT_DIR_PATH, ROOT_DIR_PATH);
 	}
 	
-	private Directory getRootDir() {
-		boolean result = provider.download(ROOT_DIR_PATH, ROOT_DIR_PATH);
-		if(result) {
-			Directory d = (Directory) FileUtil.deserialize(ROOT_DIR_PATH);
-			return d;
-		} else {
-			Directory d = new Directory("/");
+	private Directory getDirectory() {
+		Directory d;
+		if(!rootInitialized) {
+			d = (Directory) FileUtil.deserialize(ROOT_DIR_PATH);
+		}	else {
+			d = new Directory("/");
 			FileUtil.serialize(d, ROOT_DIR_PATH);
-			result = provider.upload(ROOT_DIR_PATH, ROOT_DIR_PATH);
-			if(!result) {
-				System.out.println("Doslo je do greske prilikom inicijalizacije DropboxStorage.");
-				System.exit(1);
-			}
-			return d;
+			rootInitialized = true;
 		}
+		return d;
 	}
 	
 	private File goToPath(String[] path) {
-		if(path.length==0) return rootDir;
 		Directory currDir = rootDir;
 		for(int i=0;i<path.length;i++) {
 			boolean changed = false;
-			for(File f : currDir.getFiles()) {
+			for(File f: currDir.getFiles()) {
 				if(f.getName().equals(path[i])) {
-					if(i==path.length-1) return f;
+					if(i==path.length-1)	return f;
 					if(f.getFileType() == FileType.Directory) {
 						currDir = (Directory) f;
 						changed = true;
@@ -63,59 +57,53 @@ public class DropboxStorage implements IStorage{
 					}
 				}
 			}
-			if(!changed) return null;
+			if(!changed)	return null;
 		}
 		return null;
 	}
-	
+
 	public boolean create(Directory directory) {
-		String path[] = directory.getParentPathList();
-		File f = goToPath(path);
-		if(f==null || f.getFileType()!=FileType.Directory) {
+		String[] path = directory.getParentPathList();
+		File f = this.goToPath(path);
+		if(f==null || f.getFileType()!=FileType.Directory)
 			return false;
-		}
+		
 		((Directory)f).addFile(directory);
-		if(!updateRootDir()) {
-			((Directory)f).removeFile(directory);
-			return false;
-		}
+		this.updateFiles();
 		return true;
 	}
 
-	public boolean upload(String sourcePath, File destination) {
-		if(!destination.isValid() || !FileUtil.isPathValid(sourcePath) ||
-				!currentUser.getPermission().create) return false;
-		String pathList[] = destination.getParentPathList();
-		File f = goToPath(pathList);
-		if(f==null || f.getFileType()!=FileType.Directory) return false;
-		((Directory)f).addFile(destination);
-		if(!updateRootDir() || !provider.upload(sourcePath, destination.getName())) {
-			((Directory)f).removeFile(destination);
+	public boolean upload(String sourcePath, File file) {
+		if(!file.isValid() || !FileUtil.isPathValid(sourcePath) || !currentUser.getPermission().create)
 			return false;
-		}
+		
+		String[] path = file.getParentPathList();
+		File f = this.goToPath(path);
+		if(f==null || f.getFileType()!=FileType.Directory)
+			return false;
+		
+		FileUtil.copyFiles(sourcePath, file.getPath());
+		((Directory)f).addFile(file);
+		this.updateFiles();
+		
 		return true;
 	}
 
-	public boolean download(File target, String destinationPath) {
-		if(!target.isValid() || !FileUtil.isPathValid(destinationPath) ||
-				currentUser.getPermission().download) return false;
-		return provider.download(target.getName(), destinationPath);
-	}
-	
 	public boolean delete(File file) {
-		if(!file.isValid() || !currentUser.getPermission().delete) return false;
+		if(!file.isValid() || !currentUser.getPermission().delete)
+			return false;
+		
 		String pathList[] = file.getParentPathList();
 		File f = goToPath(pathList);
-		if(f==null || f.getFileType()!=FileType.Directory) return false;
-		((Directory)f).removeFile(file);
-		if(!updateRootDir() || !provider.delete(file.getName())) {
-			((Directory)f).addFile(file);
+		if(f==null || f.getFileType()!=FileType.Directory)
 			return false;
-		}
+		
+		FileUtil.deleteFile(file.getPath());
+		((Directory)f).removeFile(file);
+		this.updateFiles();
+		
 		return true;
 	}
-	
-	
 
 	public List<File> list(ListParams params) {
 		List<File> files = new ArrayList<File>();
@@ -158,4 +146,13 @@ public class DropboxStorage implements IStorage{
 			files.add(file);
 		}
 	}
+
+	public boolean download(File target, String destinationPath) {
+		if(!target.isValid() || !FileUtil.isPathValid(destinationPath) || currentUser.getPermission().download) 
+			return false;
+		
+		FileUtil.copyFiles(target.getPath(), destinationPath);
+		return true;
+	}
 }
+

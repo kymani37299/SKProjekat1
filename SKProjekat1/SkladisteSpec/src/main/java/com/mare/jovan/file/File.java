@@ -15,7 +15,8 @@ public class File implements Serializable{
 	public File(String path) {
 		this.path = path.replace('/', '\'').replace('\\', '\'');
 		String tmp[] = this.path.split("\'");
-		this.name = tmp[tmp.length-1];
+		if(tmp.length==0) this.name = "root";
+		else this.name = tmp[tmp.length-1];
 		// TODO CHECK IF VALID
 		this.valid = true;
 		this.type = FileType.File;
