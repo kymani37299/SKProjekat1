@@ -88,19 +88,12 @@ public class DropboxStorage implements IStorage{
 		String pathList[] = destination.getParentPathList();
 		File f = goToPath(pathList);
 		if(f==null || f.getFileType()!=FileType.Directory) return false;
-		if(FileUtil.isDirectory(sourcePath)) {
-			if(!FileUtil.zipFiles(sourcePath)) {
-				return false;
-			}
-			sourcePath += ".zip";
-		}
 		((Directory)f).addFile(destination);
 		if(!updateRootDir() || !provider.upload(sourcePath, destination.getPath())) {
 			((Directory)f).removeFile(destination);
-			FileUtil.deleteFile(sourcePath);
+			updateRootDir();
 			return false;
 		}
-		FileUtil.deleteFile(sourcePath);
 		return true;
 	}
 
@@ -119,15 +112,32 @@ public class DropboxStorage implements IStorage{
 	}
 	
 	public boolean delete(File file) {
+		System.out.println(file.getPath());
 		if(!file.isValid() || !currentUser.getPermission().delete) return false;
-		String pathList[] = file.getParentPathList();
-		File f = goToPath(pathList);
+		String parentPathList[] = file.getParentPathList();
+		String pathList[] = file.getPathList();
+		file = goToPath(pathList);
+		if(file.getFileType()==FileType.Directory) {
+			ArrayList<File> files = new ArrayList<File>();
+			for(File child : ((Directory)file).getFiles()) {
+				files.add(child);
+			}
+			for(File child : files) {
+				if(!delete(child)) return false;
+			}
+		}
+		File f = goToPath(parentPathList);
 		if(f==null || f.getFileType()!=FileType.Directory) return false;
 		((Directory)f).removeFile(file);
-		if(!updateRootDir() || !provider.delete(file.getName())) {
-			((Directory)f).addFile(file);
+		if(!updateRootDir()) {
 			return false;
 		}
+		if(file.getFileType()==FileType.File && !provider.delete(file.getPath())) {
+			((Directory)f).addFile(file);
+			updateRootDir();
+			return false;
+		}
+		
 		return true;
 	}
 	
@@ -140,8 +150,6 @@ public class DropboxStorage implements IStorage{
 			File f = goToPath(params.getPath().getPathList());
 			if(f!=null && f.getFileType()==FileType.Directory) {
 				currDir = (Directory) f;
-			} else {
-				return files;
 			}
 		}
 		list(params,files,currDir);
@@ -150,11 +158,14 @@ public class DropboxStorage implements IStorage{
 	
 	private void list(ListParams params,List<File> files,File file) {
 		if(file.getFileType()==FileType.Directory) {
-			if(params.getTypeFilter()!=null && params.getTypeFilter()==FileType.Directory) {
-				files.add(file);
-			}
 			for(File f : ((Directory)file).getFiles()) {
 				list(params,files,f);
+			}
+			if(params.getTypeFilter()!=null && params.getTypeFilter()==FileType.Directory) {
+				return;
+			}
+			if(params.getNameFilter()!=null && !file.getName().contains(params.getNameFilter())) {
+				return;
 			}
 		} else {
 			if(params.getTypeFilter()!=null && params.getTypeFilter()!=FileType.File) {
@@ -171,7 +182,7 @@ public class DropboxStorage implements IStorage{
 					return;
 				}
 			}
-			files.add(file);
 		}
+		files.add(file);
 	}
 }

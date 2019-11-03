@@ -66,9 +66,8 @@ public class App
 		} else if(params[0].equals("mkdir") && params.length==2) {
 			result = storage.create(new Directory(params[1]));
 		} else if(params[0].equals("upload") && params.length==3) {
-			// TODO: Metadata
 			result = storage.upload(params[1], new File(params[2]));
-		} else if(params[0].equals("delete") && params.length==3) {
+		} else if(params[0].equals("delete") && params.length==2) {
 			result = storage.delete(new File(params[1]));
 		} else if(params[0].equals("download") && params.length==3) {
 			result = storage.download(new File(params[1]), params[2]);

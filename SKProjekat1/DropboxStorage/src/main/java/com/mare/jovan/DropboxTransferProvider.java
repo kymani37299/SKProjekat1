@@ -10,7 +10,7 @@ import com.dropbox.core.v2.DbxClientV2;
 
 public class DropboxTransferProvider {
 	
-	private final static String ACCESS_TOKEN = "rzVY5Wkw_EAAAAAAAAAAFtulw5ZQya4Gc0RMcV15hlYojad8T_MqXY3zVKWLZ7oX";
+	private final static String ACCESS_TOKEN = "rzVY5Wkw_EAAAAAAAAAAHGtAF_UyN8uOBNnDY67EP6TtGrtsHPmsv4CtSfgmkd9e";
 	private final static boolean DEBUG_MODE = false;
 	
 	private static DropboxTransferProvider instance;
