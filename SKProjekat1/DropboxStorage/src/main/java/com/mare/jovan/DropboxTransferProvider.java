@@ -10,7 +10,7 @@ import com.dropbox.core.v2.DbxClientV2;
 
 public class DropboxTransferProvider {
 	
-	private final static String ACCESS_TOKEN = "rzVY5Wkw_EAAAAAAAAAAFGgcOrmPwI-Xx-KeJczHGn0icT37AyzCSeqY8veP-sje";
+	private final static String ACCESS_TOKEN = "rzVY5Wkw_EAAAAAAAAAAFtulw5ZQya4Gc0RMcV15hlYojad8T_MqXY3zVKWLZ7oX";
 	private final static boolean DEBUG_MODE = false;
 	
 	private static DropboxTransferProvider instance;
@@ -37,6 +37,7 @@ public class DropboxTransferProvider {
 		try {
 			InputStream uploadFile = new FileInputStream(sourcePath);
 			client.files().uploadBuilder(destinationPath).uploadAndFinish(uploadFile);
+			uploadFile.close();
           return true;
 		} catch (Exception e) {
 			if(DEBUG_MODE) {
@@ -54,6 +55,7 @@ public class DropboxTransferProvider {
 		try {
 			OutputStream downloadFile = new FileOutputStream(destinationPath);
 			client.files().downloadBuilder(targetPath).download(downloadFile);
+			downloadFile.close();
 			return true;
 		} catch (Exception e) {
 			if(DEBUG_MODE) {

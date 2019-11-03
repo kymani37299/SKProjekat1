@@ -2,6 +2,7 @@ package com.mare.jovan.file;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Date;
 
 public class File implements Serializable{
 	private static final long serialVersionUID = 1L;
@@ -20,11 +21,14 @@ public class File implements Serializable{
 		// TODO CHECK IF VALID
 		this.valid = true;
 		this.type = FileType.File;
+		
+		metadata = new FileMetadata();
+		metadata.setDateCreated(new Date(System.currentTimeMillis()));
 	}
 	
-	public File(String path, FileMetadata metadata) {
+	public File(String path, String description) {
 		this(path);
-		this.metadata = metadata;
+		metadata.setDescription(description);
 	}
 	
 	public FileMetadata getMetadata() {

@@ -86,5 +86,9 @@ public class DropboxConnection implements IConnection {
 		return false;
 	}
 
+	public boolean isLoggedIn() {
+		return currentUser!=null;
+	}
+
 
 }

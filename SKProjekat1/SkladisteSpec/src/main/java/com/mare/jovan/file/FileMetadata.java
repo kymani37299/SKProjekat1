@@ -1,13 +1,15 @@
 package com.mare.jovan.file;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class FileMetadata implements Serializable{
 	private static final long serialVersionUID = 1L;
 	
+	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+	
 	private Date dateCreated = null;
-	private String owner = null;
 	private String description = "No description";
 	private int noDownloads = 0;
 	
@@ -15,10 +17,9 @@ public class FileMetadata implements Serializable{
 		
 	}
 	
-	public FileMetadata(Date dateCreated, String owner, String description) {
+	public FileMetadata(Date dateCreated, String description) {
 		super();
 		this.dateCreated = dateCreated;
-		this.owner = owner;
 		this.description = description;
 	}
 	
@@ -27,12 +28,6 @@ public class FileMetadata implements Serializable{
 	}
 	public void setDateCreated(Date dateCreated) {
 		this.dateCreated = dateCreated;
-	}
-	public String getOwner() {
-		return owner;
-	}
-	public void setOwner(String owner) {
-		this.owner = owner;
 	}
 	public String getDescription() {
 		return description;
@@ -43,10 +38,16 @@ public class FileMetadata implements Serializable{
 	public int getNoDownloads() {
 		return noDownloads;
 	}
-	public void setNoDownloads(int noDownloads) {
-		this.noDownloads = noDownloads;
+	public void incNoDownloads() {
+		noDownloads++;
 	}
 	
-	
+	@Override
+	public String toString() {
+		String output = "Created: " + dateFormat.format(dateCreated);
+		output += " Description: " + description;
+		output += " No downloads: " + noDownloads;
+		return output;
+	}
 	
 }

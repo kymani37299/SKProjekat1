@@ -88,18 +88,34 @@ public class DropboxStorage implements IStorage{
 		String pathList[] = destination.getParentPathList();
 		File f = goToPath(pathList);
 		if(f==null || f.getFileType()!=FileType.Directory) return false;
+		if(FileUtil.isDirectory(sourcePath)) {
+			if(!FileUtil.zipFiles(sourcePath)) {
+				return false;
+			}
+			sourcePath += ".zip";
+		}
 		((Directory)f).addFile(destination);
-		if(!updateRootDir() || !provider.upload(sourcePath, destination.getName())) {
+		if(!updateRootDir() || !provider.upload(sourcePath, destination.getPath())) {
 			((Directory)f).removeFile(destination);
+			FileUtil.deleteFile(sourcePath);
 			return false;
 		}
+		FileUtil.deleteFile(sourcePath);
 		return true;
 	}
 
 	public boolean download(File target, String destinationPath) {
 		if(!target.isValid() || !FileUtil.isPathValid(destinationPath) ||
-				currentUser.getPermission().download) return false;
-		return provider.download(target.getName(), destinationPath);
+				!currentUser.getPermission().download) return false;
+		if(!provider.download(target.getPath(), destinationPath + "/" + target.getName())) {
+			return false;
+		}
+		File file = goToPath(target.getPathList());
+		if(file!=null) {
+			file.getMetadata().incNoDownloads();
+			updateRootDir();
+		}
+		return true;
 	}
 	
 	public boolean delete(File file) {

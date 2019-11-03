@@ -8,5 +8,6 @@ public interface IConnection {
 	boolean noUsers();
 	boolean addUser(User user);
 	boolean banUser(String username);
+	boolean isLoggedIn();
 	boolean logout();
 }

@@ -58,50 +58,65 @@ public class App
 	
 	private static void processCommand(String command) {
 		String params[] = command.split(" ");
-		boolean result=false;
-		if(params[0].equals("exit")) {
+		boolean result=true;
+		if(params[0].length()==0) {
+			return;
+		} else if(params[0].equals("exit")) {
 			appActive = false;
-			result = true;
-		} else if(params[0].equals("mkdir")) {
+		} else if(params[0].equals("mkdir") && params.length==2) {
 			result = storage.create(new Directory(params[1]));
-		} else if(params[0].equals("upload")) {
+		} else if(params[0].equals("upload") && params.length==3) {
 			// TODO: Metadata
 			result = storage.upload(params[1], new File(params[2]));
-		} else if(params[0].equals("delete")) {
+		} else if(params[0].equals("delete") && params.length==3) {
 			result = storage.delete(new File(params[1]));
-		} else if(params[0].equals("download")) {
+		} else if(params[0].equals("download") && params.length==3) {
 			result = storage.download(new File(params[1]), params[2]);
 		} else if(params[0].equals("list")) {
 			ListParams listParams = new ListParams();
 			for(int i=1;i<params.length;i++) {
 				String tmpParams[] = params[i].split("=");
-				if(tmpParams[0].equals("-name")) {
-					listParams.setNameFilter(tmpParams[1]);
-				} else if(tmpParams[0].equals("-ext")) {
-					listParams.setExtFilter(tmpParams[1]);
-				} else if(tmpParams[0].equals("-path")) {
-					listParams.setPath(new File(tmpParams[1]));
-				} else if(tmpParams[0].equals("-meta")) {
-					listParams.setShowMetadata(tmpParams[1].equals("Y"));
-				} else if(tmpParams[0].equals("-type")) {
-					if(tmpParams[1].equals("DIR")) {
-						listParams.setNameFilter("DIR");
-					} else { 
-						listParams.setNameFilter("FILE");
+				if(tmpParams.length==2) {
+					if(tmpParams[0].equals("-name")) {
+						listParams.setNameFilter(tmpParams[1]);
+					} else if(tmpParams[0].equals("-ext")) {
+						listParams.setExtFilter(tmpParams[1]);
+					} else if(tmpParams[0].equals("-path")) {
+						listParams.setPath(new File(tmpParams[1]));
+					} else if(tmpParams[0].equals("-meta")) {
+						listParams.setShowMetadata(tmpParams[1].equals("Y"));
+					} else if(tmpParams[0].equals("-type")) {
+						if(tmpParams[1].equals("DIR")) {
+							listParams.setNameFilter("DIR");
+						} else { 
+							listParams.setNameFilter("FILE");
+						}
 					}
 				}
 			}
 			for(File f : storage.list(listParams)) {
+				if(listParams.isShowMetadata()) {
+					System.out.println("[" + f.getMetadata() + "]");
+				}
 				System.out.println(f.getPath());
 			}
-			
-			result = true;
 			return;
-		} else {
+		} else if(params[0].equals("adduser") && params.length==4) {
+			UserPermission permissions = new UserPermission();
+			permissions.create = params[3].charAt(0)=='1';
+			permissions.delete = params[3].charAt(1)=='1';
+			permissions.download = params[3].charAt(2)=='1';
+			User user = new User(params[1],params[2],permissions);
+			result = connection.addUser(user);
+		} else if(params[0].equals("banuser") && params.length==2) {
+			result = connection.banUser(params[1]);
+		} else if(params[0].equals("logout")) {
+			connection.logout();
+		}
+		else {
 			if(!params[0].equals("help"))
 				System.out.println("Invalid command. See help:");
 			System.out.println(helpText);
-			result = true;
 			return;
 		}
 		
@@ -122,21 +137,20 @@ public class App
         	connection = new DropboxConnection();
         }
         
-        if(connection.noUsers()) {
-        	registerAdmin();
-        } else {
-        	requestLogin();
-        }
-        
-        storage = connection.getStorage();
-        if(storage==null) {
-        	System.out.println("Greska u ucitavanju skladista. Pokrenite ponovo aplikaciju!");
-        	appActive = false;
-        }
-        
-        System.out.println("Uspesno pokrenuto skladiste. Unesite komandu:");
-        
         while(appActive) {
+        	if(connection.noUsers() || !connection.isLoggedIn()) {
+        		if(connection.noUsers()) {
+        			registerAdmin();
+        		} else {
+        			requestLogin();
+        		}
+                storage = connection.getStorage();
+                if(storage==null) {
+                	System.out.println("Greska u ucitavanju skladista. Pokrenite ponovo aplikaciju!");
+                	appActive = false;
+                }
+                System.out.println("Uspesno ucitavanje skladista. Unesite komandu: ");
+            }
         	String line = sc.nextLine();
         	processCommand(line);
         }
