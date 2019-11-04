@@ -14,8 +14,8 @@ public class LocalStorage implements IStorage {
 
 	private ArrayList<String> invalidExtensions = new ArrayList<String>();
 	
-	protected static final String ROOT_DIR_PATH = System.getProperty("user.home").concat("/Desktop/root/");
-	private static final String FILES_PATH = ROOT_DIR_PATH.concat("files.bin");
+	protected static String ROOT_DIR_PATH = System.getProperty("user.home").concat("/Desktop/root/");
+	private static String FILES_PATH = ROOT_DIR_PATH.concat("files.bin");
 	
 	private User currentUser;
 	private Directory rootDir;

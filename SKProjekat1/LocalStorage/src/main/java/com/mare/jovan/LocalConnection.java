@@ -8,12 +8,21 @@ import com.mare.jovan.util.FileUtil;
 public class LocalConnection implements IConnection{
 
 	
-	private final static String USER_DATA_PATH = LocalStorage.ROOT_DIR_PATH.concat("users.bin");
+	private static String USER_DATA_PATH;
 	
 	private ArrayList<User> usersList;
 	private User currentUser;
 	
+	public LocalConnection(String rootDir) {
+		LocalStorage.ROOT_DIR_PATH = rootDir;
+		USER_DATA_PATH = LocalStorage.ROOT_DIR_PATH.concat("users.bin");
+		initRoot();
+		usersList = getUsersList();
+		
+	}
+	
 	public LocalConnection() {
+		USER_DATA_PATH = LocalStorage.ROOT_DIR_PATH.concat("users.bin");
 		initRoot();
 		usersList = getUsersList();
 	}

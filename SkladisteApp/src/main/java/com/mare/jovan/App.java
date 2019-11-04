@@ -167,7 +167,11 @@ public class App
         sc = new Scanner(System.in);
         
         if(LOCAL_STORAGE) {
-        	connection = new LocalConnection();
+        	if(args.length<1) {
+        		connection = new LocalConnection();
+        	} else {
+        		connection = new LocalConnection(args[0]);
+        	}
         } else {
         	connection = new DropboxConnection();
         }
