@@ -14,17 +14,24 @@ public class LocalStorage implements IStorage {
 
 	private ArrayList<String> invalidExtensions = new ArrayList<String>();
 	
-	protected static String ROOT_DIR_PATH = System.getProperty("user.home").concat("/Desktop/root/");
-	private static String FILES_PATH = ROOT_DIR_PATH.concat("files.bin");
+	protected static String ROOT_DIR_PATH = System.getProperty("user.home").concat("/Desktop/root");
+	private static String FILES_PATH = ROOT_DIR_PATH.concat("/files.bin");
 	
 	private User currentUser;
 	private Directory rootDir;
 	
-		
 	protected LocalStorage(User currentUser) {
 		this.currentUser = currentUser;		
 		this.rootDir = getDirectory();
 		
+	}
+	
+	protected static void updateRootPath(String path) {
+		if(path.charAt(path.length()-1)!='/' || path.charAt(path.length()-1)!='\\') {
+			path += "/";
+		}
+		ROOT_DIR_PATH = path;
+		FILES_PATH = ROOT_DIR_PATH + "files.bin";
 	}
 	
 	private void updateFiles() {

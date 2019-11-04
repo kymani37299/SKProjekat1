@@ -14,7 +14,7 @@ public class LocalConnection implements IConnection{
 	private User currentUser;
 	
 	public LocalConnection(String rootDir) {
-		LocalStorage.ROOT_DIR_PATH = rootDir;
+		LocalStorage.updateRootPath(rootDir);
 		USER_DATA_PATH = LocalStorage.ROOT_DIR_PATH.concat("users.bin");
 		initRoot();
 		usersList = getUsersList();

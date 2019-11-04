@@ -176,6 +176,8 @@ public class App
         	connection = new DropboxConnection();
         }
         
+        appActive = true;
+        
         while(appActive) {
         	if(connection.noUsers() || !connection.isLoggedIn()) {
         		if(connection.noUsers()) {
