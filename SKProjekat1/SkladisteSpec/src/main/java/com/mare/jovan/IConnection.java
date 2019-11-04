@@ -6,8 +6,8 @@ public interface IConnection {
 	boolean login(String username, String password);
 	IStorage getStorage();
 	boolean noUsers();
-	boolean addUser(User user);
-	boolean banUser(String username);
+	EProcessResult addUser(User user);
+	EProcessResult banUser(String username);
 	boolean isLoggedIn();
 	boolean logout();
 }

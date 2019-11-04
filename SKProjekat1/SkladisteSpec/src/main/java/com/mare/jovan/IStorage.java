@@ -6,9 +6,9 @@ import com.mare.jovan.file.Directory;
 import com.mare.jovan.file.File;
 
 public interface IStorage {
-	boolean create(Directory directory);
-	boolean upload(String sourcePath, File file);
-	boolean delete(File file);
+	EProcessResult create(Directory directory);
+	EProcessResult upload(String sourcePath, File file);
+	EProcessResult delete(File file);
 	List<File> list(ListParams params);
-	boolean download(File target, String destinationPath);
+	EProcessResult download(File target, String destinationPath);
 }

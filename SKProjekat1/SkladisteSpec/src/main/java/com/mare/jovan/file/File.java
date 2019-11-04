@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Date;
 
+import com.mare.jovan.util.FileUtil;
+
 public class File implements Serializable{
 	private static final long serialVersionUID = 1L;
 	
@@ -18,8 +20,7 @@ public class File implements Serializable{
 		String tmp[] = this.path.split("\'");
 		if(tmp.length==0) this.name = "root";
 		else this.name = tmp[tmp.length-1];
-		// TODO CHECK IF VALID
-		this.valid = true;
+		this.valid = FileUtil.isPathValid(path);
 		this.type = FileType.File;
 		
 		metadata = new FileMetadata();

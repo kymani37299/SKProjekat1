@@ -10,9 +10,9 @@ import java.io.Serializable;
 import java.nio.file.Files;
 
 public class FileUtil {
-
+	
 	public static boolean isPathValid(String path) {
-		String[] illegal = {"\n","\r","\t","\0","\f","`","?","*","\\","<",">","|","\"",":"};
+		String[] illegal = {"\n","\r","\t","\0","\f","`","?","*","\\","<",">","|","\""};
 		for(String str:illegal) {
 			if(path.contains(str)) {
 				return false;

@@ -8,40 +8,42 @@ import com.mare.jovan.file.File;
 import com.mare.jovan.file.FileType;
 import com.mare.jovan.user.User;
 import com.mare.jovan.util.FileUtil;
+import com.mare.jovan.util.ZipUtil;
 
 public class LocalStorage implements IStorage {
 
-	private static final String ROOT_DIR_PATH = "files.bin";
+	private ArrayList<String> invalidExtensions = new ArrayList<String>();
+	
+	protected static final String ROOT_DIR_PATH = System.getProperty("user.home").concat("/Desktop/root/");
+	private static final String FILES_PATH = ROOT_DIR_PATH.concat("files.bin");
 	
 	private User currentUser;
 	private Directory rootDir;
 	
-	private boolean rootInitialized;
 		
 	protected LocalStorage(User currentUser) {
-		this.rootInitialized = false;
 		this.currentUser = currentUser;		
 		this.rootDir = getDirectory();
 		
 	}
 	
 	private void updateFiles() {
-		FileUtil.serialize(rootDir, ROOT_DIR_PATH);
+		FileUtil.serialize(rootDir, FILES_PATH);
 	}
 	
 	private Directory getDirectory() {
 		Directory d;
-		if(!rootInitialized) {
-			d = (Directory) FileUtil.deserialize(ROOT_DIR_PATH);
+		if(FileUtil.fileExists(FILES_PATH)) {
+			d = (Directory) FileUtil.deserialize(FILES_PATH);
 		}	else {
 			d = new Directory("/");
-			FileUtil.serialize(d, ROOT_DIR_PATH);
-			rootInitialized = true;
+			FileUtil.serialize(d, FILES_PATH);
 		}
 		return d;
 	}
 	
 	private File goToPath(String[] path) {
+		if(path.length==0) return rootDir;
 		Directory currDir = rootDir;
 		for(int i=0;i<path.length;i++) {
 			boolean changed = false;
@@ -62,47 +64,83 @@ public class LocalStorage implements IStorage {
 		return null;
 	}
 
-	public boolean create(Directory directory) {
+	public EProcessResult create(Directory directory) {
 		String[] path = directory.getParentPathList();
 		File f = this.goToPath(path);
 		if(f==null || f.getFileType()!=FileType.Directory)
-			return false;
+			return EProcessResult.DEST_NOT_VALID;
 		
 		((Directory)f).addFile(directory);
 		this.updateFiles();
-		return true;
+		return EProcessResult.PROCESS_SUCCESS;
 	}
 
-	public boolean upload(String sourcePath, File file) {
-		if(!file.isValid() || !FileUtil.isPathValid(sourcePath) || !currentUser.getPermission().create)
-			return false;
-		
+	public EProcessResult upload(String sourcePath, File file) {
+		if(!file.isValid()) {
+			return EProcessResult.DEST_NOT_VALID;
+		}
+		if(!FileUtil.isPathValid(sourcePath)) {
+			return EProcessResult.SOURCE_NOT_VALID;
+		}
+		if(!currentUser.getPermission().create) {
+			return EProcessResult.DENIED_ACCESS;
+		}
+		if(checkExtension(file.getName())) {
+			return EProcessResult.EXTENSION_FORBIDDEN;
+		}
 		String[] path = file.getParentPathList();
 		File f = this.goToPath(path);
 		if(f==null || f.getFileType()!=FileType.Directory)
-			return false;
+			return EProcessResult.DEST_NOT_VALID;
 		
-		FileUtil.copyFiles(sourcePath, file.getPath());
+		boolean isDirectory = FileUtil.isDirectory(sourcePath);
+		
+		if(isDirectory) {
+			ZipUtil.zipFolder(sourcePath);
+			sourcePath += ".zip";
+		}
+		
+		FileUtil.copyFiles(sourcePath, ROOT_DIR_PATH.concat(file.getPath()));
+		
+		if(isDirectory) {
+			FileUtil.deleteFile(sourcePath);
+		}
+		
 		((Directory)f).addFile(file);
 		this.updateFiles();
 		
-		return true;
+		return EProcessResult.PROCESS_SUCCESS;
 	}
-
-	public boolean delete(File file) {
-		if(!file.isValid() || !currentUser.getPermission().delete)
-			return false;
-		
-		String pathList[] = file.getParentPathList();
-		File f = goToPath(pathList);
+	
+	
+	public EProcessResult delete(File file) {
+		if(!file.isValid()) {
+			return EProcessResult.DEST_NOT_VALID;
+		}
+		if(!currentUser.getPermission().delete) {
+			return EProcessResult.DENIED_ACCESS;
+		}
+		String parentPathList[] = file.getParentPathList();
+		String pathList[] = file.getPathList();
+		file = goToPath(pathList);
+		if(file.getFileType()==FileType.Directory) {
+			ArrayList<File> files = new ArrayList<File>();
+			for(File child : ((Directory)file).getFiles()) {
+				files.add(child);
+			}
+			for(File child : files) {
+				if(delete(child)!=EProcessResult.PROCESS_SUCCESS) return EProcessResult.PROCESS_FAILED;
+			}
+		}
+		File f = goToPath(parentPathList);
 		if(f==null || f.getFileType()!=FileType.Directory)
-			return false;
-		
-		FileUtil.deleteFile(file.getPath());
+			return EProcessResult.DEST_NOT_VALID;
+		if(!FileUtil.deleteFile(ROOT_DIR_PATH.concat(file.getPath())))
+			return EProcessResult.PROCESS_FAILED;
 		((Directory)f).removeFile(file);
 		this.updateFiles();
+		return EProcessResult.PROCESS_SUCCESS;
 		
-		return true;
 	}
 
 	public List<File> list(ListParams params) {
@@ -112,8 +150,6 @@ public class LocalStorage implements IStorage {
 			File f = goToPath(params.getPath().getPathList());
 			if(f!=null && f.getFileType()==FileType.Directory) {
 				currDir = (Directory) f;
-			} else {
-				return files;
 			}
 		}
 		list(params,files,currDir);
@@ -122,11 +158,14 @@ public class LocalStorage implements IStorage {
 	
 	private void list(ListParams params,List<File> files,File file) {
 		if(file.getFileType()==FileType.Directory) {
-			if(params.getTypeFilter()!=null && params.getTypeFilter()==FileType.Directory) {
-				files.add(file);
-			}
 			for(File f : ((Directory)file).getFiles()) {
 				list(params,files,f);
+			}
+			if(params.getTypeFilter()!=null && params.getTypeFilter()==FileType.Directory) {
+				return;
+			}
+			if(params.getNameFilter()!=null && !file.getName().contains(params.getNameFilter())) {
+				return;
 			}
 		} else {
 			if(params.getTypeFilter()!=null && params.getTypeFilter()!=FileType.File) {
@@ -143,16 +182,42 @@ public class LocalStorage implements IStorage {
 					return;
 				}
 			}
-			files.add(file);
 		}
+		files.add(file);
 	}
 
-	public boolean download(File target, String destinationPath) {
-		if(!target.isValid() || !FileUtil.isPathValid(destinationPath) || currentUser.getPermission().download) 
-			return false;
+	public EProcessResult download(File target, String destinationPath) {
+		destinationPath = destinationPath.concat("/"+target.getName());
+		if(!target.isValid()) {
+			return EProcessResult.DEST_NOT_VALID;
+		}
+		if(!FileUtil.isPathValid(destinationPath)) {
+			return EProcessResult.SOURCE_NOT_VALID;
+		}
+		if(!currentUser.getPermission().download) {
+			return EProcessResult.DENIED_ACCESS;
+		}
 		
-		FileUtil.copyFiles(target.getPath(), destinationPath);
-		return true;
+		if(!FileUtil.copyFiles(ROOT_DIR_PATH.concat(target.getPath()), destinationPath)) {
+			return EProcessResult.PROCESS_FAILED;
+		}
+		
+		File file = goToPath(target.getPathList());
+		if(file!=null) {
+			file.getMetadata().incNoDownloads();
+			updateFiles();
+		}
+		return EProcessResult.PROCESS_SUCCESS;
 	}
-}
+	
+	public void addExtension(String ext) {
+		this.invalidExtensions.add(ext);
+	}
+	
+	public boolean checkExtension(String name) {
+		String[] paths = name.split("\\.");
+		if(paths.length==0) return false;
+		return invalidExtensions.contains(paths[paths.length-1]);
+	}
 
+}

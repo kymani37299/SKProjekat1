@@ -8,6 +8,7 @@ import com.mare.jovan.file.File;
 import com.mare.jovan.file.FileType;
 import com.mare.jovan.user.User;
 import com.mare.jovan.util.FileUtil;
+import com.mare.jovan.util.ZipUtil;
 
 public class DropboxStorage implements IStorage{
 
@@ -18,10 +19,22 @@ public class DropboxStorage implements IStorage{
 	private User currentUser;
 	private Directory rootDir;
 	
+	private static final String forbiddenExstensions[] = {"exe","pdf"};
+	
 	protected DropboxStorage(User currentUser) {
 		provider = DropboxTransferProvider.getInstance();
 		this.currentUser = currentUser;
 		rootDir = getRootDir();
+	}
+	
+	private boolean validExstension(String name) {
+		String extSplit[] = name.split("\\.");
+		if(extSplit.length==0) return true;
+		String ext = extSplit[extSplit.length-1];
+		for(int i=0;i<forbiddenExstensions.length;i++) {
+			if(ext.equals(forbiddenExstensions[i])) return false;
+		}
+		return true;
 	}
 	
 	private boolean updateRootDir() {
@@ -68,52 +81,81 @@ public class DropboxStorage implements IStorage{
 		return null;
 	}
 	
-	public boolean create(Directory directory) {
+	public EProcessResult create(Directory directory) {
 		String path[] = directory.getParentPathList();
 		File f = goToPath(path);
 		if(f==null || f.getFileType()!=FileType.Directory) {
-			return false;
+			return EProcessResult.DEST_NOT_VALID;
 		}
 		((Directory)f).addFile(directory);
 		if(!updateRootDir()) {
 			((Directory)f).removeFile(directory);
-			return false;
+			return EProcessResult.PROCESS_FAILED;
 		}
-		return true;
+		return EProcessResult.PROCESS_SUCCESS;
 	}
 
-	public boolean upload(String sourcePath, File destination) {
-		if(!destination.isValid() || !FileUtil.isPathValid(sourcePath) ||
-				!currentUser.getPermission().create) return false;
-		String pathList[] = destination.getParentPathList();
-		File f = goToPath(pathList);
-		if(f==null || f.getFileType()!=FileType.Directory) return false;
+	public EProcessResult upload(String sourcePath, File destination) {
+		if(!destination.isValid()) {
+			return EProcessResult.DEST_NOT_VALID;
+		}
+		if(!FileUtil.isPathValid(sourcePath)) {
+			return EProcessResult.SOURCE_NOT_VALID;
+		}
+		if(!currentUser.getPermission().create) {
+			return EProcessResult.DENIED_ACCESS;
+		}
+		if(!validExstension(destination.getName())) {
+			return EProcessResult.EXTENSION_FORBIDDEN;
+		}
+		String parentPathList[] = destination.getParentPathList();
+		File f = goToPath(parentPathList);
+		if(f==null || f.getFileType()!=FileType.Directory) return EProcessResult.DEST_NOT_VALID;
 		((Directory)f).addFile(destination);
+		boolean isDirectory = FileUtil.isDirectory(sourcePath);
+		if(isDirectory) {
+			ZipUtil.zipFolder(sourcePath);
+			sourcePath += ".zip";
+		}
 		if(!updateRootDir() || !provider.upload(sourcePath, destination.getPath())) {
 			((Directory)f).removeFile(destination);
 			updateRootDir();
-			return false;
+			return EProcessResult.PROCESS_FAILED;
 		}
-		return true;
+		
+		FileUtil.deleteFile(sourcePath);
+		
+		return EProcessResult.PROCESS_SUCCESS;
 	}
 
-	public boolean download(File target, String destinationPath) {
-		if(!target.isValid() || !FileUtil.isPathValid(destinationPath) ||
-				!currentUser.getPermission().download) return false;
+	public EProcessResult download(File target, String destinationPath) {
+		if(!target.isValid()) {
+			return EProcessResult.DEST_NOT_VALID;
+		}
+		if(!FileUtil.isPathValid(destinationPath)) {
+			return EProcessResult.SOURCE_NOT_VALID;
+		}
+		if(!currentUser.getPermission().download) {
+			return EProcessResult.DENIED_ACCESS;
+		}
 		if(!provider.download(target.getPath(), destinationPath + "/" + target.getName())) {
-			return false;
+			return EProcessResult.PROCESS_FAILED;
 		}
 		File file = goToPath(target.getPathList());
 		if(file!=null) {
 			file.getMetadata().incNoDownloads();
 			updateRootDir();
 		}
-		return true;
+		return EProcessResult.PROCESS_SUCCESS;
 	}
 	
-	public boolean delete(File file) {
-		System.out.println(file.getPath());
-		if(!file.isValid() || !currentUser.getPermission().delete) return false;
+	public EProcessResult delete(File file) {
+		if(!file.isValid()) {
+			return EProcessResult.DEST_NOT_VALID;
+		}
+		if(!currentUser.getPermission().delete) {
+			return EProcessResult.DENIED_ACCESS;
+		}
 		String parentPathList[] = file.getParentPathList();
 		String pathList[] = file.getPathList();
 		file = goToPath(pathList);
@@ -123,26 +165,24 @@ public class DropboxStorage implements IStorage{
 				files.add(child);
 			}
 			for(File child : files) {
-				if(!delete(child)) return false;
+				if(delete(child)!=EProcessResult.PROCESS_SUCCESS) return EProcessResult.PROCESS_FAILED;
 			}
 		}
 		File f = goToPath(parentPathList);
-		if(f==null || f.getFileType()!=FileType.Directory) return false;
+		if(f==null || f.getFileType()!=FileType.Directory) return EProcessResult.DEST_NOT_VALID;
 		((Directory)f).removeFile(file);
 		if(!updateRootDir()) {
-			return false;
+			return EProcessResult.PROCESS_FAILED;
 		}
 		if(file.getFileType()==FileType.File && !provider.delete(file.getPath())) {
 			((Directory)f).addFile(file);
 			updateRootDir();
-			return false;
+			return EProcessResult.PROCESS_FAILED;
 		}
 		
-		return true;
+		return EProcessResult.PROCESS_SUCCESS;
 	}
 	
-	
-
 	public List<File> list(ListParams params) {
 		List<File> files = new ArrayList<File>();
 		Directory currDir = rootDir;
@@ -161,24 +201,29 @@ public class DropboxStorage implements IStorage{
 			for(File f : ((Directory)file).getFiles()) {
 				list(params,files,f);
 			}
-			if(params.getTypeFilter()!=null && params.getTypeFilter()==FileType.Directory) {
+			if(params.getTypeFilter()!=null && params.getTypeFilter()==FileType.File) {
 				return;
 			}
 			if(params.getNameFilter()!=null && !file.getName().contains(params.getNameFilter())) {
+				return;
+			}
+			if(params.getExtFilter()!=null) {
 				return;
 			}
 		} else {
-			if(params.getTypeFilter()!=null && params.getTypeFilter()!=FileType.File) {
+			if(params.getTypeFilter()!=null && params.getTypeFilter()==FileType.Directory) {
 				return;
 			}
 			
 			if(params.getNameFilter()!=null && !file.getName().contains(params.getNameFilter())) {
 				return;
 			}
-			
 			if(params.getExtFilter()!=null) {
-				String ext[] = file.getName().split(".");
-				if(ext.length<2 || !ext[ext.length-1].equals(params.getExtFilter())) {
+				String extList[] = file.getName().split("\\.");
+				if(extList.length==0)  {
+					return;
+				}
+				if(!extList[extList.length-1].equals(params.getExtFilter())) {
 					return;
 				}
 			}

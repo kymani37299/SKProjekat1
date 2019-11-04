@@ -63,21 +63,21 @@ public class DropboxConnection implements IConnection {
 		return new DropboxStorage(currentUser);
 	}
 
-	public boolean addUser(User user) {
-		if(!noUsers() && ( currentUser==null || !currentUser.isAdmin())) return false;
+	public EProcessResult addUser(User user) {
+		if(!noUsers() && ( currentUser==null || !currentUser.isAdmin())) return EProcessResult.DENIED_ACCESS;
 		usersList.add(user);
-		return updateUsersList();
+		return updateUsersList() ?  EProcessResult.PROCESS_SUCCESS : EProcessResult.PROCESS_FAILED;
 	}
 
-	public boolean banUser(String username) {
-		if(currentUser==null || !currentUser.isAdmin()) return false;
+	public EProcessResult banUser(String username) {
+		if(currentUser==null || !currentUser.isAdmin()) return EProcessResult.DENIED_ACCESS;
 		for(User user : usersList) {
 			if(user.getUsername().equals(username)) {
 				usersList.remove(user);
-				return updateUsersList();
+				return updateUsersList() ?  EProcessResult.PROCESS_SUCCESS : EProcessResult.PROCESS_FAILED;
 			}
 		}
-		return false;
+		return EProcessResult.USER_NOT_FOUND;
 	}
 
 	public boolean logout() {

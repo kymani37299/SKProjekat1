@@ -4,6 +4,7 @@ import java.util.Scanner;
 
 import com.mare.jovan.file.Directory;
 import com.mare.jovan.file.File;
+import com.mare.jovan.file.FileType;
 import com.mare.jovan.user.User;
 import com.mare.jovan.user.UserPermission;
 
@@ -13,22 +14,25 @@ import com.mare.jovan.user.UserPermission;
  */
 public class App 
 {
-	private static final boolean LOCAL_STORAGE = false;
+	private static final boolean LOCAL_STORAGE = true;
 	private static Scanner sc;
 	private static boolean appActive = true;
 	private static IStorage storage;
 	private static IConnection connection;
-	private static String helpText = "help\r\n" + 
-			"mkdir <ime>\r\n" + 
-			"upload <src> <dest> -m=<description>\r\n" + 
+	private static String helpText = "mkdir <name>\r\n" + 
+			"upload <source> <destination> -m=<description>\r\n" + 
 			"delete <target>\r\n" + 
-			"download <target> <dest>\r\n" + 
-			"list -name=<nameFilter> -ext=<extFilter> -path=<pathFilter> -meta=<Y/N> -type=<DIR/FILE";
+			"download <target> <destination>\r\n" + 
+			"list -name=<nameFilter> -ext=<extFilter> -path=<pathFilter> -meta=<Y/N> -type=<DIR|FILE>\r\n" + 
+			"adduser <username> <password> <0|1:create><0|1:delete><0|1:download>\r\n" + 
+			"banuser <username>\r\n" + 
+			"logout\r\n" + 
+			"exit";
 	
 	private static void registerAdmin() {
-		System.out.println("Dobrodosli na SkladisteApp.\nRegistracija\n-------------\nUpisite username:");
+		System.out.println("Welcome to SkladisteApp.\nRegistration\n-------------\nInsert username:");
 		String username = sc.nextLine();
-		System.out.println("Upisite password: ");
+		System.out.println("Insert password: ");
 		String password = sc.nextLine();
 		// connection.createAdmin(user);
 		UserPermission userPermission = new UserPermission();
@@ -39,34 +43,64 @@ public class App
 		admin.setAdmin(true);
 		connection.addUser(admin);
 		connection.login(admin.getUsername(), admin.getPassword());
-		System.out.println("Registracija je uspesno zavrsena!");
+		System.out.println("Registration successful!");
 	}
 	
 	private static void requestLogin() {
 		boolean result = false;
 		do {
-			System.out.println("Unesite username: ");
+			System.out.println("Insert username: ");
 			String username = sc.nextLine();
-			System.out.println("Upisite lozinku: ");
+			System.out.println("Insert password: ");
 			String password = sc.nextLine();
 			result = connection.login(username, password);
 			if(!result) {
-				System.out.println("Pogresna lozinka!");
+				System.out.println("Wrong credentials!");
 			}
 		} while(!result);
 	}
 	
+   private static void printResult(EProcessResult result) {
+	   if(result!=null) {
+		   switch(result){
+	       	case DEST_NOT_VALID:
+	       		System.out.println("Destination path not valid.");	break;
+			case SOURCE_NOT_VALID:
+				System.out.println("Source path not valid.");	break;
+			case DENIED_ACCESS:
+				System.out.println("User doesn't have permission.");	break;
+			case EXTENSION_FORBIDDEN:
+				System.out.println("Invalid file extension.");	break;
+			case PROCESS_FAILED:
+				System.out.println("Process failed.");	break;
+			case PROCESS_SUCCESS:
+				System.out.println("Process is successful");	break;
+			case USER_NOT_FOUND:
+				System.out.println("User not found."); break;
+			default:
+				System.out.println("Humans failed.");
+       }
+   }
+    
+}
+	
 	private static void processCommand(String command) {
 		String params[] = command.split(" ");
-		boolean result=true;
+		EProcessResult result=null;
 		if(params[0].length()==0) {
 			return;
 		} else if(params[0].equals("exit")) {
 			appActive = false;
 		} else if(params[0].equals("mkdir") && params.length==2) {
 			result = storage.create(new Directory(params[1]));
-		} else if(params[0].equals("upload") && params.length==3) {
-			result = storage.upload(params[1], new File(params[2]));
+		} else if(params[0].equals("upload") && params.length>=3) {
+			File f = new File(params[2]);
+			if(params.length>3) {
+				String desc = params[3].substring(3);
+				for(int i=4;i<params.length;i++) desc+=params[i]+" ";
+				f.getMetadata().setDescription(desc);
+			}
+			result = storage.upload(params[1], f);
 		} else if(params[0].equals("delete") && params.length==2) {
 			result = storage.delete(new File(params[1]));
 		} else if(params[0].equals("download") && params.length==3) {
@@ -86,9 +120,9 @@ public class App
 						listParams.setShowMetadata(tmpParams[1].equals("Y"));
 					} else if(tmpParams[0].equals("-type")) {
 						if(tmpParams[1].equals("DIR")) {
-							listParams.setNameFilter("DIR");
+							listParams.setTypeFilter(FileType.Directory);
 						} else { 
-							listParams.setNameFilter("FILE");
+							listParams.setTypeFilter(FileType.File);
 						}
 					}
 				}
@@ -106,6 +140,12 @@ public class App
 			permissions.delete = params[3].charAt(1)=='1';
 			permissions.download = params[3].charAt(2)=='1';
 			User user = new User(params[1],params[2],permissions);
+			if(user.getPermission().create)
+				System.out.println("create");
+			if(user.getPermission().delete)
+				System.out.println("delete");
+			if(user.getPermission().download)
+				System.out.println("download");
 			result = connection.addUser(user);
 		} else if(params[0].equals("banuser") && params.length==2) {
 			result = connection.banUser(params[1]);
@@ -119,11 +159,7 @@ public class App
 			return;
 		}
 		
-		if(result) {
-			System.out.println("Uspesno izvrsena koamnda!");
-		} else {
-			System.out.println("Doslo je do greske prilikom izvrsavanja komande!");
-		}
+		printResult(result);
 	}
 	
     public static void main( String[] args )
@@ -145,10 +181,10 @@ public class App
         		}
                 storage = connection.getStorage();
                 if(storage==null) {
-                	System.out.println("Greska u ucitavanju skladista. Pokrenite ponovo aplikaciju!");
+                	System.out.println("Storage initialization failed. Please restart the app.");
                 	appActive = false;
                 }
-                System.out.println("Uspesno ucitavanje skladista. Unesite komandu: ");
+                System.out.println("Please,type the command(type help for help):");
             }
         	String line = sc.nextLine();
         	processCommand(line);

@@ -1,0 +1,11 @@
+package com.mare.jovan;
+
+public enum EProcessResult {
+	DEST_NOT_VALID,
+	SOURCE_NOT_VALID,
+	DENIED_ACCESS,
+	EXTENSION_FORBIDDEN,
+	PROCESS_FAILED,
+	PROCESS_SUCCESS,
+	USER_NOT_FOUND
+}
