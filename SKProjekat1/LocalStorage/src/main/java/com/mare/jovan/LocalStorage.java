@@ -107,7 +107,8 @@ public class LocalStorage implements IStorage {
 			sourcePath += ".zip";
 		}
 		
-		FileUtil.copyFiles(sourcePath, ROOT_DIR_PATH.concat(file.getPath()));
+		if(!FileUtil.copyFiles(sourcePath, ROOT_DIR_PATH.concat(file.getPath())))
+			return EProcessResult.PROCESS_FAILED;
 		
 		if(isDirectory) {
 			FileUtil.deleteFile(sourcePath);
