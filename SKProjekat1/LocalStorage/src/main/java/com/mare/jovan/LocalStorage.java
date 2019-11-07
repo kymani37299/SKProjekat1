@@ -10,16 +10,25 @@ import com.mare.jovan.user.User;
 import com.mare.jovan.util.FileUtil;
 import com.mare.jovan.util.ZipUtil;
 
+/**
+ * <p>This class (@code LocalStorage) implements (@code IStorage) and 
+ * is responsible for data manipulation and manipulation of file structure.</p>
+ * @author Jovan Markovic
+ */
 public class LocalStorage implements IStorage {
 
 	private ArrayList<String> invalidExtensions = new ArrayList<String>();
 	
-	protected static String ROOT_DIR_PATH = System.getProperty("user.home").concat("/Desktop/root");
+	protected static String ROOT_DIR_PATH = System.getProperty("user.home").concat("/Desktop/root/");
 	private static String FILES_PATH = ROOT_DIR_PATH.concat("/files.bin");
 	
 	private User currentUser;
 	private Directory rootDir;
 	
+	/**
+	 * Creates new LocalStorage instance and sets current user value to given parameter
+	 * @param currentUser User instance
+	 */
 	protected LocalStorage(User currentUser) {
 		this.currentUser = currentUser;		
 		this.rootDir = getDirectory();
@@ -27,9 +36,7 @@ public class LocalStorage implements IStorage {
 	}
 	
 	protected static void updateRootPath(String path) {
-		if(path.charAt(path.length()-1)!='/' || path.charAt(path.length()-1)!='\\') {
-			path += "/";
-		}
+		path += "/";
 		ROOT_DIR_PATH = path;
 		FILES_PATH = ROOT_DIR_PATH + "files.bin";
 	}
@@ -218,11 +225,15 @@ public class LocalStorage implements IStorage {
 		return EProcessResult.PROCESS_SUCCESS;
 	}
 	
+	/**
+	 * Adds provided extension to list of invalid extensions
+	 * @param ext the extension string
+	 */
 	public void addExtension(String ext) {
 		this.invalidExtensions.add(ext);
 	}
 	
-	public boolean checkExtension(String name) {
+	private boolean checkExtension(String name) {
 		String[] paths = name.split("\\.");
 		if(paths.length==0) return false;
 		return invalidExtensions.contains(paths[paths.length-1]);

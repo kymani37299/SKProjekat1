@@ -9,8 +9,19 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 
+/**
+ * FileUtil class is used for various file manipulation functions, such as:
+ * - Files serialization and deserialization
+ * - Copying,deleting and downloading files
+ * - Checking if file exists, is directory or if pathname is valid
+ */
 public class FileUtil {
 	
+	/**
+	 * Checks if given pathname has invalid characters accordingly to various operating systems.
+	 * @param path
+	 * @return false if pathname has invalid characters accordingly to various operating systems;otherwise true
+	 */
 	public static boolean isPathValid(String path) {
 		String[] illegal = {"\n","\r","\t","\0","\f","`","?","*","\\","<",">","|","\""};
 		for(String str:illegal) {
@@ -49,7 +60,12 @@ public class FileUtil {
         } catch(Exception e) {}
         return o;
 	}
-	
+	/**
+	 * Copies file from given source path to destination path. Returns false if error occurs
+	 * @param sourcePath the source pathname
+	 * @param destinationPath the destination pathname
+	 * @return false if error occurs;otherwise true
+	 */
 	public static boolean copyFiles(String sourcePath,String destinationPath) {
 		File sourceFile = new File(sourcePath);
 		File destFile = new File(destinationPath);
@@ -62,16 +78,31 @@ public class FileUtil {
 		return true;
 	}
 	
+	/**
+	 * Deletes file from given pathname. Returns false if error occurs
+	 * @param path the pathname to file
+	 * @return false if error occurs;otherwise true
+	 */
 	public static boolean deleteFile(String path) {
 		File file = new File(path);
 		return file.delete();
 	}
 	
+	/**
+	 * Checks if file on given pathname is directory
+	 * @param path the pathname to file
+	 * @return yes if file on given pathname is directory;otherwise false
+	 */
 	public static boolean isDirectory(String path) {
 		File file = new File(path);
 		return file.isDirectory();
 	}
 	
+	/**
+	 * Checks if file exist on given pathname
+	 * @param path the pathname to file
+	 * @return true if file exists on given pathname;otherwise false
+	 */
 	public static boolean fileExists(String path) {
 		File file = new File(path);
 		return file.exists();

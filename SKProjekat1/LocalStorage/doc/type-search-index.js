@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"com.mare.jovan","l":"AppTest"},{"p":"com.mare.jovan","l":"LocalConnection"},{"p":"com.mare.jovan","l":"LocalStorage"}]

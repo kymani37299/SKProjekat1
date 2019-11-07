@@ -5,6 +5,12 @@ import java.util.ArrayList;
 import com.mare.jovan.user.User;
 import com.mare.jovan.util.FileUtil;
 
+/**
+*	<p>This class (@code LocalConnection) implements (@code IConnection) and 
+*	is responsible for manipulation of users.</p>
+*
+*	@author Marko Sreckovic
+*/
 public class LocalConnection implements IConnection{
 
 	
@@ -13,6 +19,10 @@ public class LocalConnection implements IConnection{
 	private ArrayList<User> usersList;
 	private User currentUser;
 	
+	/**
+	 * Creates new LocalConnection instance and initializes root directory using given path
+	 * @param rootDir path to root directory
+	 */
 	public LocalConnection(String rootDir) {
 		LocalStorage.updateRootPath(rootDir);
 		USER_DATA_PATH = LocalStorage.ROOT_DIR_PATH.concat("users.bin");
@@ -21,6 +31,9 @@ public class LocalConnection implements IConnection{
 		
 	}
 	
+	/**
+	 * Creates new LocalConnection instance and initializes root directory using predefined path
+	 */
 	public LocalConnection() {
 		USER_DATA_PATH = LocalStorage.ROOT_DIR_PATH.concat("users.bin");
 		initRoot();
@@ -84,16 +97,15 @@ public class LocalConnection implements IConnection{
 		return EProcessResult.USER_NOT_FOUND;
 	}
 
-	public boolean logout() {
+	public void logout() {
 		currentUser = null;
-		return true;
 	}
 
 	public boolean isLoggedIn() {
 		return currentUser!=null;
 	}
 	
-	public static void initRoot() {
+	private static void initRoot() {
 		java.io.File dir = new java.io.File(LocalStorage.ROOT_DIR_PATH);
 		if(!dir.exists())
 			dir.mkdir();

@@ -19,15 +19,5 @@
     	<artifactId>SkladisteSpec</artifactId>
     	<version>1.0.0</version>
     </dependency>
-    <dependency>
-    	<groupId>com.mare.jovan</groupId>
-    	<artifactId>DropboxStorage</artifactId>
-    	<version>1.0.0</version>
-    </dependency>
-    <dependency>
-    	<groupId>com.mare.jovan</groupId>
-    	<artifactId>LocalStorage</artifactId>
-    	<version>1.0.0</version>
-    </dependency>
   </dependencies>
 </project>

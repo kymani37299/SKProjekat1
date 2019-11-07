@@ -14,7 +14,9 @@ import com.mare.jovan.user.UserPermission;
  */
 public class App 
 {
-	private static final boolean LOCAL_STORAGE = true;
+	
+	private static final String configPath = "connection.cfg";
+
 	private static Scanner sc;
 	private static boolean appActive = true;
 	private static IStorage storage;
@@ -49,7 +51,7 @@ public class App
 	private static void requestLogin() {
 		boolean result = false;
 		do {
-			System.out.println("Insert username: ");
+			System.out.println("Welcome to SkladisteApp.\nLogin\n-------------\nInsert username:");
 			String username = sc.nextLine();
 			System.out.println("Insert password: ");
 			String password = sc.nextLine();
@@ -165,15 +167,15 @@ public class App
     public static void main( String[] args )
     {
         sc = new Scanner(System.in);
-        
-        if(LOCAL_STORAGE) {
-        	if(args.length<1) {
-        		connection = new LocalConnection();
-        	} else {
-        		connection = new LocalConnection(args[0]);
-        	}
+        if(args.length>0) {
+        	connection = ConnectionFactory.getConnection(configPath,args[0]);
         } else {
-        	connection = new DropboxConnection();
+        	connection = ConnectionFactory.getConnection(configPath);
+        }
+        
+        if(connection==null) {
+        	System.out.println("Program initialization failed. Please check config file!");
+        	System.exit(0);
         }
         
         appActive = true;

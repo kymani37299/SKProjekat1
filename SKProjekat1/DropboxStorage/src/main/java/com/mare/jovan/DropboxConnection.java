@@ -4,16 +4,27 @@ import java.util.ArrayList;
 import com.mare.jovan.user.User;
 import com.mare.jovan.util.FileUtil;
 
+/**
+*	<p>This class (@code DropboxConnection) implements (@code IConnection) and 
+*	is responsible for manipulation of users.</p>
+*
+*	@author Marko Sreckovic
+*/
 public class DropboxConnection implements IConnection {
 
 	private DropboxTransferProvider provider;
-	
+
 	private final static String USER_DATA_PATH = "users.bin";
-	
+
 	private ArrayList<User> usersList;
+
 	private User currentUser;
 	
-	public DropboxConnection() {
+	/**
+	 * Gets existing user list or initializes new if it doesn't exist.
+	 */
+	public DropboxConnection(String accessToken) {
+		DropboxTransferProvider.ACCESS_TOKEN = accessToken;
 		provider = DropboxTransferProvider.getInstance();
 		provider.download(USER_DATA_PATH, USER_DATA_PATH);
 		usersList = getUsersList();
@@ -42,10 +53,16 @@ public class DropboxConnection implements IConnection {
 		}
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	public boolean noUsers() {
 		return usersList.isEmpty();
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	public boolean login(String username, String password) {
 		for(User user: usersList) {
 			if(user.getUsername().equals(username) &&
@@ -58,17 +75,26 @@ public class DropboxConnection implements IConnection {
 		return false;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public IStorage getStorage() {
 		if(currentUser==null) return null;
 		return new DropboxStorage(currentUser);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public EProcessResult addUser(User user) {
 		if(!noUsers() && ( currentUser==null || !currentUser.isAdmin())) return EProcessResult.DENIED_ACCESS;
 		usersList.add(user);
 		return updateUsersList() ?  EProcessResult.PROCESS_SUCCESS : EProcessResult.PROCESS_FAILED;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public EProcessResult banUser(String username) {
 		if(currentUser==null || !currentUser.isAdmin()) return EProcessResult.DENIED_ACCESS;
 		for(User user : usersList) {
@@ -80,15 +106,21 @@ public class DropboxConnection implements IConnection {
 		return EProcessResult.USER_NOT_FOUND;
 	}
 
-	public boolean logout() {
+	/**
+	 * {@inheritDoc}
+	 */
+	public void logout() {
 		currentUser = null;
 		provider.setEnabled(false);
-		return false;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public boolean isLoggedIn() {
 		return currentUser!=null;
 	}
 
 
 }
+

@@ -10,17 +10,28 @@ import com.mare.jovan.user.User;
 import com.mare.jovan.util.FileUtil;
 import com.mare.jovan.util.ZipUtil;
 
+
+/**
+ * <p>This class (@code DropboxStorage) implements (@code IStorage) and 
+ * is responsible for data manipulation and manipulation of file structure.</p>
+ * @author Marko Sreckovic
+ */
 public class DropboxStorage implements IStorage{
 
 	private static final String ROOT_DIR_PATH = "files.bin";
 	
 	private DropboxTransferProvider provider;
-	
+
 	private User currentUser;
+
 	private Directory rootDir;
-	
+
 	private static final String forbiddenExstensions[] = {"exe","pdf"};
 	
+	/**
+	 * Gets existing file structure or initializes new if it doesn't exist.
+	*	@param currentUser represents current logged in user info
+	*/
 	protected DropboxStorage(User currentUser) {
 		provider = DropboxTransferProvider.getInstance();
 		this.currentUser = currentUser;
@@ -81,6 +92,9 @@ public class DropboxStorage implements IStorage{
 		return null;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	public EProcessResult create(Directory directory) {
 		String path[] = directory.getParentPathList();
 		File f = goToPath(path);
@@ -95,6 +109,9 @@ public class DropboxStorage implements IStorage{
 		return EProcessResult.PROCESS_SUCCESS;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public EProcessResult upload(String sourcePath, File destination) {
 		if(!destination.isValid()) {
 			return EProcessResult.DEST_NOT_VALID;
@@ -128,6 +145,10 @@ public class DropboxStorage implements IStorage{
 		return EProcessResult.PROCESS_SUCCESS;
 	}
 
+
+	/**
+	 * {@inheritDoc}
+	 */
 	public EProcessResult download(File target, String destinationPath) {
 		if(!target.isValid()) {
 			return EProcessResult.DEST_NOT_VALID;
@@ -149,6 +170,9 @@ public class DropboxStorage implements IStorage{
 		return EProcessResult.PROCESS_SUCCESS;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	public EProcessResult delete(File file) {
 		if(!file.isValid()) {
 			return EProcessResult.DEST_NOT_VALID;
@@ -183,6 +207,9 @@ public class DropboxStorage implements IStorage{
 		return EProcessResult.PROCESS_SUCCESS;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	public List<File> list(ListParams params) {
 		List<File> files = new ArrayList<File>();
 		Directory currDir = rootDir;
@@ -231,3 +258,5 @@ public class DropboxStorage implements IStorage{
 		files.add(file);
 	}
 }
+
+

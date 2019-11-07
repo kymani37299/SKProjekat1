@@ -7,10 +7,14 @@ import java.io.OutputStream;
 
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;
-
+/**
+ * <p>This class (@code DropboxTransferProvider) is responsible
+ * for communicating with Dropbox API</p>
+ * @author Marko Sreckovic
+ */
 public class DropboxTransferProvider {
 	
-	private final static String ACCESS_TOKEN = "rzVY5Wkw_EAAAAAAAAAAJ_qu7axK_CE2zetFQoNUfwhZ17-zdntd22fnVfuUJ_kG";
+	public static String ACCESS_TOKEN = "";
 	private final static boolean DEBUG_MODE = false;
 	
 	private static DropboxTransferProvider instance;
@@ -24,14 +28,14 @@ public class DropboxTransferProvider {
         enabled = true;
 	}
 	
-	public static DropboxTransferProvider getInstance() {
+	protected static DropboxTransferProvider getInstance() {
 		if(instance==null) {
 			instance = new DropboxTransferProvider();
 		}
 		return instance;
 	}
 	
-	public boolean upload(String sourcePath, String destinationPath) {
+	protected boolean upload(String sourcePath, String destinationPath) {
 		if(!enabled) return false;
 		destinationPath = "/" + destinationPath;
 		try {
@@ -49,7 +53,7 @@ public class DropboxTransferProvider {
 		return false;
     }
 	
-	public boolean download(String targetPath, String destinationPath) {
+	protected boolean download(String targetPath, String destinationPath) {
 		if(!enabled) return false;
 		targetPath ="/" +  targetPath;
 		try {
@@ -67,7 +71,7 @@ public class DropboxTransferProvider {
 	}
 	
 	@SuppressWarnings("deprecation")
-	public boolean delete(String targetPath) {
+	protected boolean delete(String targetPath) {
 		if(!enabled) return false;
 		targetPath ="/" +  targetPath;
 		try {
@@ -82,12 +86,12 @@ public class DropboxTransferProvider {
 		return false;
 	}
 	
-	public boolean update(String sourcePath,String targetPath) {
+	protected boolean update(String sourcePath,String targetPath) {
 		delete(targetPath);
 		return upload(sourcePath,targetPath);
 	}
 	
-	public void setEnabled(boolean enabled) {
+	protected void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
 }
